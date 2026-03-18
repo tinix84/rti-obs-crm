@@ -1,0 +1,11 @@
+{
+  "templater": {
+    "templates_folder": ".obsidian/templates",
+    "trigger_on_file_creation": true
+  },
+  "plugins-enabled": [
+    "templater-obsidian",
+    "dataview",
+    "obsidian-tasks-plugin"
+  ]
+}

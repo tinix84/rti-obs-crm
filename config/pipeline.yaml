@@ -1,0 +1,39 @@
+# CRM Pipeline Stage Definitions
+# Edit this file to customise your sales pipeline – no code change required.
+
+stages:
+  - id: lead
+    label: Lead
+    order: 1
+    default_probability: 0.10
+
+  - id: qualified
+    label: Qualified
+    order: 2
+    default_probability: 0.25
+
+  - id: proposal
+    label: Proposal
+    order: 3
+    default_probability: 0.50
+
+  - id: negotiation
+    label: Negotiation
+    order: 4
+    default_probability: 0.75
+
+  - id: won
+    label: Won
+    order: 5
+    default_probability: 1.00
+    terminal: true
+    triggers:
+      - workflow: on_deal_won
+
+  - id: lost
+    label: Lost
+    order: 6
+    default_probability: 0.00
+    terminal: true
+    triggers:
+      - workflow: on_deal_lost

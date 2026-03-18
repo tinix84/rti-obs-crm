@@ -1,0 +1,40 @@
+# Workflow: on_deal_won
+# Triggered when a deal transitions to the "Won" stage.
+id: on_deal_won
+description: "Actions to perform after closing a deal as Won"
+version: "1.0"
+
+nodes:
+  - id: notify_owner
+    type: notify
+    params:
+      message: "🎉 Deal '{{ deal.title }}' has been Won! Value: {{ deal.value }} {{ deal.currency }}"
+      channel: log
+
+  - id: create_invoice_task
+    type: action
+    params:
+      action: create_task
+      title: "Send invoice for {{ deal.title }}"
+      due_days: 2
+      contact_id: "{{ deal.contact_id }}"
+      tags: [invoice, won-deal]
+
+  - id: update_contact_status
+    type: action
+    params:
+      action: update_contact
+      contact_id: "{{ deal.contact_id }}"
+      fields:
+        status: customer
+
+  - id: log_execution
+    type: action
+    params:
+      action: log_run
+
+edges:
+  - [notify_owner, create_invoice_task]
+  - [notify_owner, update_contact_status]
+  - [create_invoice_task, log_execution]
+  - [update_contact_status, log_execution]
