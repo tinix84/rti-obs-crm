@@ -46,9 +46,11 @@ def build_index(vault_root: Path, db_path: Path) -> None:
         if not rows:
             log.info("No records for table %s – skipping.", table)
             continue
-        df = pd.DataFrame(rows)  # noqa: F841 - used in duckdb SQL via df variable
+        df = pd.DataFrame(rows)
         con.execute(f"DROP TABLE IF EXISTS {table}")
-        con.execute(f"CREATE TABLE {table} AS SELECT * FROM df")
+        con.register("_tmp_df", df)
+        con.execute(f"CREATE TABLE {table} AS SELECT * FROM _tmp_df")
+        con.unregister("_tmp_df")
         log.info("Indexed %d records into table '%s'.", len(rows), table)
 
     con.close()

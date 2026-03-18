@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -123,11 +124,25 @@ class Workflow:
 
 # ── Engine ────────────────────────────────────────────────────────────────────
 
-def _safe_eval(expression: str, context: dict[str, Any]) -> bool:
-    """Evaluate a boolean expression in a sandboxed namespace.
+# Allowed operators in condition expressions (allowlist for safety)
+_ALLOWED_EXPR_PATTERN = re.compile(
+    r"""^[\w\s.\[\]'"<>=!()\%+\-*/,&|.]+$"""
+)
 
-    Only the context dict keys are available; no builtins.
+
+def _safe_eval(expression: str, context: dict[str, Any]) -> bool:
+    """Evaluate a boolean expression in a restricted namespace.
+
+    Security measures:
+    - ``__builtins__`` is removed to prevent access to built-in functions.
+    - Expression is validated against an allowlist of safe characters before eval.
+    - Context values should be primitive types (str, int, float, bool, list, dict).
+
+    Note: This is suitable for trusted workflow definitions authored by developers.
+    Do NOT expose this endpoint to untrusted user input without additional validation.
     """
+    if not _ALLOWED_EXPR_PATTERN.match(expression):
+        raise ValueError(f"Condition expression contains disallowed characters: {expression!r}")
     try:
         result = eval(expression, {"__builtins__": {}}, context)  # noqa: S307
         return bool(result)
@@ -137,7 +152,6 @@ def _safe_eval(expression: str, context: dict[str, Any]) -> bool:
 
 def _render_template(text: str, context: dict[str, Any]) -> str:
     """Very simple {{ key }} template substitution (no LLM)."""
-    import re
 
     def replace(m: re.Match) -> str:
         key = m.group(1).strip()
