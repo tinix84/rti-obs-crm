@@ -1,0 +1,39 @@
+# Workflow: new_lead_nurture
+# Triggered when a new contact is created with status "lead".
+id: new_lead_nurture
+description: "Initial nurture steps for a new lead"
+version: "1.0"
+
+nodes:
+  - id: check_email_present
+    type: condition
+    params:
+      expression: "bool(contact.get('email'))"
+      true_branch: send_welcome_task
+      false_branch: flag_missing_email
+
+  - id: send_welcome_task
+    type: action
+    params:
+      action: create_task
+      title: "Send welcome email to {{ contact.name }}"
+      due_days: 1
+      contact_id: "{{ contact.id }}"
+      tags: [nurture, welcome]
+
+  - id: flag_missing_email
+    type: notify
+    params:
+      message: "⚠️ Lead '{{ contact.name }}' has no email address – follow up required."
+      channel: log
+
+  - id: log_execution
+    type: action
+    params:
+      action: log_run
+
+edges:
+  - [check_email_present, send_welcome_task]
+  - [check_email_present, flag_missing_email]
+  - [send_welcome_task, log_execution]
+  - [flag_missing_email, log_execution]
